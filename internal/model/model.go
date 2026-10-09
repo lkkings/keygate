@@ -247,6 +247,10 @@ type Plan struct {
 	TrialDays      int    `bun:",notnull" json:"trial_days"`
 	GraceDays      int    `bun:",notnull" json:"grace_days"`
 	StripePriceID  string `json:"stripe_price_id,omitempty"`
+	// Multi-currency pricing (in cents/smallest unit)
+	PriceUSD *int64 `json:"price_usd,omitempty"`
+	PriceCNY *int64 `json:"price_cny,omitempty"`
+	PriceHKD *int64 `json:"price_hkd,omitempty"`
 	// Maintenance period, perpetual plans only. UpdatesDays is how
 	// long a purchase includes updates for (0 = for life). A renewal
 	// is a one-time purchase of RenewalDays more, sold at

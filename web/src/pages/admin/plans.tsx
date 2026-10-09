@@ -180,7 +180,15 @@ export default function PlansPage() {
                           {p.product?.name || p.product_id}
                         </DataTableCell>
                         <DataTableCell>
-                          <Badge variant="secondary">{p.license_type}</Badge>
+                          <div className="flex gap-1">
+                            <Badge variant="secondary">{p.license_type}</Badge>
+                            {/* Task 11.4: Show multi-currency badge if plan has >1 currency */}
+                            {[p.price_usd, p.price_cny, p.price_hkd].filter((price) => price != null).length > 1 && (
+                              <Badge variant="outline" className="text-xs">
+                                {t("plans.multiCurrency")}
+                              </Badge>
+                            )}
+                          </div>
                         </DataTableCell>
                         <DataTableCell>
                           {supportsActivations ? (
@@ -339,6 +347,10 @@ function PlanDialog({
     token_ttl_days: plan?.token_ttl_days ?? 0,
     active: plan?.active ?? true,
     stripe_price_id: plan?.stripe_price_id || "",
+    // Multi-currency prices: convert cents to dollars for display (Task 11.2)
+    price_usd: plan?.price_usd != null ? (plan.price_usd / 100).toFixed(2) : "",
+    price_cny: plan?.price_cny != null ? (plan.price_cny / 100).toFixed(2) : "",
+    price_hkd: plan?.price_hkd != null ? (plan.price_hkd / 100).toFixed(2) : "",
     updates_days: plan?.updates_days ?? 0,
     renewal_days: plan?.renewal_days ?? 0,
     stripe_renewal_price_id: plan?.stripe_renewal_price_id || "",
@@ -380,7 +392,30 @@ function PlanDialog({
   // max_activations=3 for a saas product just because the form
   // pre-filled it before the product was selected).
   const handleSubmit = () => {
-    const payload: Partial<Plan> & Record<string, unknown> = { ...form }
+    const payload: any = { ...form }
+
+    // Task 11.2: Convert decimal prices to cents
+    if (form.price_usd) {
+      const usd = parseFloat(form.price_usd as string)
+      payload.price_usd = Math.round(usd * 100)
+    } else {
+      payload.price_usd = 0
+    }
+
+    if (form.price_cny) {
+      const cny = parseFloat(form.price_cny as string)
+      payload.price_cny = Math.round(cny * 100)
+    } else {
+      payload.price_cny = 0
+    }
+
+    if (form.price_hkd) {
+      const hkd = parseFloat(form.price_hkd as string)
+      payload.price_hkd = Math.round(hkd * 100)
+    } else {
+      payload.price_hkd = 0
+    }
+
     if (!supports.activations) {
       payload.max_activations = 0
       payload.license_model = "standard"
@@ -578,6 +613,62 @@ function PlanDialog({
                   placeholder="price_..."
                 />
               </div>
+
+              {/* Task 11.1: Multi-currency pricing fields */}
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-base font-semibold">{t("plans.multiCurrencyPricing")}</Label>
+                <p className="text-xs text-muted-foreground">{t("plans.multiCurrencyDesc")}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("plans.priceIn", { currency: "USD" })}</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.price_usd}
+                    onChange={(e) => set("price_usd", e.target.value)}
+                    placeholder="99.00"
+                    className="pl-7"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("plans.priceIn", { currency: "CNY" })}</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">¥</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.price_cny}
+                    onChange={(e) => set("price_cny", e.target.value)}
+                    placeholder="699.00"
+                    className="pl-7"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("plans.priceIn", { currency: "HKD" })}</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">HK$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.price_hkd}
+                    onChange={(e) => set("price_hkd", e.target.value)}
+                    placeholder="799.00"
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+
+              {/* End multi-currency fields */}
               {/* Maintenance period: the license never expires, but only
                 releases published before updates_until can be installed.
                 The server clears these on non-perpetual plans. */}

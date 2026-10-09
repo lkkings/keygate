@@ -42,6 +42,44 @@ const SettingMaintenanceFeatures = "maintenance_features_enabled"
 // running, its next start raises it again — which is the point.
 const SettingFeedURLTTLBound = "feed_url_ttl_bound"
 
+// Payment provider settings
+
+// Alipay settings
+const (
+	SettingAlipayEnabled    = "alipay_enabled"
+	SettingAlipayAppID      = "alipay_app_id"
+	SettingAlipayPrivateKey = "alipay_private_key"
+	SettingAlipayPublicKey  = "alipay_public_key"
+	SettingAlipaySandbox    = "alipay_sandbox_mode"
+)
+
+// WeChat Pay settings
+const (
+	SettingWechatEnabled      = "wechat_enabled"
+	SettingWechatAppID        = "wechat_app_id"
+	SettingWechatMerchantID   = "wechat_merchant_id"
+	SettingWechatAPIKey       = "wechat_api_key"
+	SettingWechatCertFile     = "wechat_cert_file"
+	SettingWechatKeyFile      = "wechat_key_file"
+	SettingWechatSandbox      = "wechat_sandbox_mode"
+)
+
+// ePay settings
+const (
+	SettingEpayEnabled     = "epay_enabled"
+	SettingEpayMerchantID  = "epay_merchant_id"
+	SettingEpayAPIKey      = "epay_api_key"
+	SettingEpayGateway     = "epay_gateway_url"
+	SettingEpaySandbox     = "epay_sandbox_mode"
+	SettingEpaySignatureAlg = "epay_signature_algorithm" // MD5 or HMAC-SHA256
+)
+
+// Renewal reminder settings
+const (
+	SettingRenewalRemindersEnabled = "renewal_reminders_enabled"
+	SettingRenewalReminderDays     = "renewal_reminder_days" // Comma-separated: "30,14,7,1"
+)
+
 type Setting struct {
 	bun.BaseModel `bun:"table:settings"`
 	Key           string `bun:",pk" json:"key"`

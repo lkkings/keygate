@@ -35,6 +35,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath \
       -X github.com/tabloy/keygate/internal/version.BuildDate=${BUILD_DATE}" \
     -o /keygate ./cmd/server
 
+    
 # ── Runtime ──
 FROM alpine:3.21
 RUN apk add --no-cache ca-certificates tzdata curl

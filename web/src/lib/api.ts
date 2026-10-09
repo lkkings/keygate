@@ -499,6 +499,17 @@ export const admin = {
   sendTestEmail: (to?: string) => post<{ status: string }>("/admin/settings/test-email", to ? { to } : {}),
   clearSecretSetting: (key: string) => del<{ status: string; key: string }>(`/admin/settings/secrets/${key}`),
 
+  // Payment Settings
+  getPaymentSettings: () =>
+    get<{
+      providers: Record<string, Record<string, string>>
+      webhook_urls: Record<string, string>
+    }>("/admin/settings/payment"),
+  updatePaymentProvider: (provider: string, settings: Record<string, string>) =>
+    put<{ message: string }>(`/admin/settings/payment/${provider}`, settings),
+  testPaymentProvider: (provider: string) =>
+    post<{ provider: string; status: string; message: string }>(`/admin/settings/payment/${provider}/test`, {}),
+
   // Email Templates
   getEmailTemplates: () =>
     get<{ templates: Record<string, { custom: string; default: string }> }>("/admin/email-templates"),
@@ -625,6 +636,10 @@ export interface Plan {
   trial_days: number
   grace_days: number
   stripe_price_id?: string
+  // Multi-currency pricing (in cents/smallest unit)
+  price_usd?: number
+  price_cny?: number
+  price_hkd?: number
   // Maintenance period (perpetual plans): days of updates a purchase
   // includes (0 = for life) and the one-time renewal sold in the portal.
   updates_days?: number

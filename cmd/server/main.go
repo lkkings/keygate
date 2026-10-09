@@ -27,13 +27,14 @@ import (
 	"github.com/tabloy/keygate/internal/config"
 	"github.com/tabloy/keygate/internal/crypto"
 	"github.com/tabloy/keygate/internal/handler"
+	paymenthandler "github.com/tabloy/keygate/internal/handler/payment"
 	"github.com/tabloy/keygate/internal/license"
 	"github.com/tabloy/keygate/internal/middleware"
 	"github.com/tabloy/keygate/internal/model"
-	"github.com/tabloy/keygate/internal/payment"
 	"github.com/tabloy/keygate/internal/service"
 	"github.com/tabloy/keygate/internal/storage"
 	"github.com/tabloy/keygate/internal/store"
+	"github.com/tabloy/keygate/internal/stripehandler"
 	"github.com/tabloy/keygate/internal/version"
 	"github.com/tabloy/keygate/pkg/response"
 )
@@ -403,7 +404,7 @@ func main() {
 
 	licenseH := handler.NewLicenseHandler(licenseSvc)
 	authH := &handler.AuthHandler{Store: db, Config: cfg, Email: emailSvc}
-	stripeH := &payment.StripeHandler{
+	stripeH := &stripehandler.StripeHandler{
 		Store:         db,
 		WebhookSecret: cfg.StripeWebhookSecret,
 		BaseURL:       cfg.BaseURL,
@@ -480,7 +481,7 @@ func main() {
 	// - Stripe secret key is configured
 	// - No manual webhook secret override via env var
 	// - BASE_URL is not localhost (Stripe can't deliver to localhost)
-	if cfg.StripeSecretKey != "" && cfg.StripeWebhookSecret == "" && !payment.IsLocalhostURL(cfg.BaseURL) {
+	if cfg.StripeSecretKey != "" && cfg.StripeWebhookSecret == "" && !stripehandler.IsLocalhostURL(cfg.BaseURL) {
 		stripeH.SetupWebhookEndpoint(ctx)
 	}
 
@@ -847,6 +848,32 @@ func main() {
 		middleware.RateLimitByIPScoped("checkout_verify", 60, time.Minute),
 		stripeH.VerifyCheckoutSession)
 
+	// Multi-payment gateway routes
+	// Initialize payment service and handler
+	paymentSvc := service.NewPaymentService(db, webhookSvc, emailSvc, logger)
+	paymentH := paymenthandler.NewHandler(paymentSvc, logger)
+
+	paymentGroup := v1.Group("/payment", middleware.RateLimitByIPScoped("payment", cfg.RateLimitAPI, time.Minute))
+	{
+		// List available payment providers
+		paymentGroup.GET("/providers", paymentH.GetProviders)
+
+		// Create checkout session for a specific provider
+		paymentGroup.POST("/:provider/checkout", paymentH.CreateCheckout)
+
+		// Handle provider webhooks
+		paymentGroup.POST("/:provider/webhook", paymentH.HandleWebhook)
+
+		// Handle successful payment returns (synchronous callback)
+		paymentGroup.GET("/:provider/return", paymentH.HandleReturn)
+
+		// Query payment status
+		paymentGroup.GET("/:provider/status/:transaction_id", paymentH.GetPaymentStatus)
+	}
+
+	// Admin payment routes will be added when handler methods are implemented
+	// TODO: Add admin payment routes (refund, transaction details, list transactions)
+
 	// Unified checkout: GET /pay/:checkout_id → Stripe
 	r.GET("/pay/:checkout_id", stripeH.CheckoutByPlan)
 
@@ -1196,6 +1223,11 @@ func main() {
 		admin.GET("/webhooks", webhookAdminH.ListWebhooks)
 		admin.POST("/webhooks", webhookAdminH.CreateWebhook)
 		admin.PUT("/webhooks/:id", webhookAdminH.UpdateWebhook)
+
+		// Payment provider settings
+		admin.GET("/settings/payment", adminH.GetPaymentSettings)
+		admin.PUT("/settings/payment/:provider", adminH.UpdatePaymentProviderSettings)
+		admin.POST("/settings/payment/:provider/test", adminH.TestPaymentProviderConnection)
 		admin.DELETE("/webhooks/:id", webhookAdminH.DeleteWebhook)
 		admin.GET("/webhooks/:id/deliveries", webhookAdminH.ListDeliveries)
 		admin.GET("/webhooks/:id/deliveries/:delivery_id", webhookAdminH.GetDelivery)

@@ -1,5 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ArrowUpCircle, Check, RefreshCw, Send, Shield, Trash2, UserPlus } from "lucide-react"
+import {
+  ArrowUpCircle,
+  Check,
+  CreditCard,
+  FileText,
+  Lock,
+  Mail,
+  RefreshCw,
+  Send,
+  Server,
+  Settings2,
+  Shield,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react"
 import { useEffect, useState } from "react"
 import { DEFAULT_REMINDER_DAYS, ReminderDaysInput } from "@/components/reminder-days-input"
 import { showToast } from "@/components/toast"
@@ -25,6 +40,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useI18n } from "@/i18n"
 import { admin } from "@/lib/api"
 import EmailTemplatesManager from "@/pages/admin/email-templates"
+import { PaymentSettingsPage } from "./payment-settings"
 
 const TIMEZONES = [
   { value: "UTC", label: "UTC +0:00", city: "UTC" },
@@ -280,13 +296,40 @@ export default function SettingsPage() {
 
       <Tabs defaultValue="general">
         <TabsList>
-          <TabsTrigger value="general">{t("settings.general")}</TabsTrigger>
-          <TabsTrigger value="team">{t("team.title")}</TabsTrigger>
-          <TabsTrigger value="email">{t("settings.email")}</TabsTrigger>
-          <TabsTrigger value="templates">{t("settings.emailTemplates")}</TabsTrigger>
-          <TabsTrigger value="security">{t("settings.security")}</TabsTrigger>
-          <TabsTrigger value="system">{t("settings.system")}</TabsTrigger>
+          <TabsTrigger value="general">
+            <Settings2 className="h-4 w-4 mr-2" />
+            {t("settings.general")}
+          </TabsTrigger>
+          <TabsTrigger value="payment">
+            <CreditCard className="h-4 w-4 mr-2" />
+            {t("settings.paymentProviders")}
+          </TabsTrigger>
+          <TabsTrigger value="team">
+            <Users className="h-4 w-4 mr-2" />
+            {t("team.title")}
+          </TabsTrigger>
+          <TabsTrigger value="email">
+            <Mail className="h-4 w-4 mr-2" />
+            {t("settings.email")}
+          </TabsTrigger>
+          <TabsTrigger value="templates">
+            <FileText className="h-4 w-4 mr-2" />
+            {t("settings.emailTemplates")}
+          </TabsTrigger>
+          <TabsTrigger value="security">
+            <Lock className="h-4 w-4 mr-2" />
+            {t("settings.security")}
+          </TabsTrigger>
+          <TabsTrigger value="system">
+            <Server className="h-4 w-4 mr-2" />
+            {t("settings.system")}
+          </TabsTrigger>
         </TabsList>
+
+        {/* Payment Providers Tab */}
+        <TabsContent value="payment">
+          <PaymentSettingsPage />
+        </TabsContent>
 
         <TabsContent value="general" className="space-y-6">
           <Card>
@@ -360,7 +403,9 @@ export default function SettingsPage() {
                 <div className="space-y-2 sm:col-span-2">
                   <Label>{t("settings.logoUrl")}</Label>
                   <div className="flex items-center gap-3">
-                    {form.logo_url && <img src={form.logo_url} alt="Custom logo" className="h-8 w-8 rounded border" />}
+                    {form.logo_url && (
+                      <img src={form.logo_url} alt={t("settings.customLogoAlt")} className="h-8 w-8 rounded border" />
+                    )}
                     <Input
                       value={form.logo_url || ""}
                       onChange={(e) => set("logo_url", e.target.value)}
@@ -490,7 +535,7 @@ export default function SettingsPage() {
                     <Input
                       value={form.cloudflare_account_id ?? ""}
                       onChange={(e) => set("cloudflare_account_id", e.target.value)}
-                      placeholder="Cloudflare account ID"
+                      placeholder={t("settings.emailCfAccountPlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
@@ -853,7 +898,9 @@ function TeamManagement() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={m.role === "owner" ? "default" : "secondary"}>{m.role}</Badge>
+                    <Badge variant={m.role === "owner" ? "default" : "secondary"}>
+                      {m.role === "owner" ? t("team.roleOwner") : m.role === "admin" ? t("team.roleAdmin") : m.role}
+                    </Badge>
                     {isOwner && m.id !== user?.id && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -915,8 +962,8 @@ function TeamManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="owner">Owner</SelectItem>
+                    <SelectItem value="admin">{t("team.roleAdmin")}</SelectItem>
+                    <SelectItem value="owner">{t("team.roleOwner")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -710,6 +710,24 @@ func (s *Store) UpdateLicense(ctx context.Context, l *model.License, cols ...str
 	return UpdateLicenseIn(ctx, s.DB, l, cols...)
 }
 
+// ExtendLicense extends a license's valid_until date by the specified number of days
+// Task 13.5: Used for renewal payments
+func (s *Store) ExtendLicense(ctx context.Context, licenseID string, extensionDays int) error {
+	query := `
+		UPDATE licenses
+		SET valid_until = valid_until + make_interval(days => ?),
+		    updated_at = now()
+		WHERE id = ?
+	`
+
+	_, err := s.DB.ExecContext(ctx, query, extensionDays, licenseID)
+	if err != nil {
+		return fmt.Errorf("failed to extend license: %w", err)
+	}
+
+	return nil
+}
+
 // UpdateLicenseIn writes the named columns on a caller's transaction,
 // for writers that hold a lock across a check and this write.
 func UpdateLicenseIn(ctx context.Context, db bun.IDB, l *model.License, cols ...string) error {

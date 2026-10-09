@@ -1,7 +1,6 @@
 services:
   keygate:
-    image: ghcr.io/tabloy/keygate:latest
-    # build: .  # uncomment to build from source
+    build: .  # uncomment to build from source
     ports:
       - "9000:9000"
     # Everything in .env reaches the container (storage, release keys,
@@ -47,16 +46,10 @@ services:
       POSTGRES_PASSWORD: keygate
       POSTGRES_DB: keygate
     volumes:
-      # postgres:18+ images expect the volume mounted at /var/lib/postgresql
-      # (data lives in a versioned subdirectory); mounting .../data makes
-      # initdb fail on a fresh volume. https://github.com/docker-library/postgres/issues/37
-      - pgdata:/var/lib/postgresql
+      - ./data/postgres:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U keygate"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
-
-volumes:
-  pgdata:
