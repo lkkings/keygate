@@ -426,6 +426,7 @@ func main() {
 	// are gone.
 	db.SetFeedURLTTL(feedTTL)
 	adminH.FeedURLTTL = feedTTL
+	adminH.BaseURL = cfg.BaseURL
 	// Whether a Stripe subscription is over is Stripe's answer to
 	// give; the admin API asks through this rather than reaching for
 	// the SDK itself. Left nil without an API key, where the question

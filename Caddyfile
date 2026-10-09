@@ -1,0 +1,25 @@
+# TLS termination for the docker-compose setup.
+#
+# DOMAIN set to a public hostname (DNS pointing at this host, ports
+# 80/443 reachable): Caddy obtains and renews a Let's Encrypt
+# certificate automatically.
+# DOMAIN unset: serves https://localhost with Caddy's local CA
+# (browsers warn until that CA is trusted).
+{$DOMAIN:localhost} {
+	encode zstd gzip
+	# Caddy sets X-Forwarded-For / X-Forwarded-Proto; Keygate trusts
+	# them from the private compose network.
+	reverse_proxy keygate:9000
+}
+
+# Everything else, e.g. https://127.0.0.1:9000. Clients connecting by
+# IP send no SNI, so Caddy only sees the container's own address and
+# no fixed certificate can match; issue one from the local CA on demand
+# (never from Let's Encrypt, which does not sign IPs anyway).
+https:// {
+	tls internal {
+		on_demand
+	}
+	encode zstd gzip
+	reverse_proxy keygate:9000
+}

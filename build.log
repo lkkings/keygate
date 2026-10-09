@@ -1,0 +1,20 @@
+﻿go : go: downloading golang.org/x/text v0.42.0
+At line:1 char:317
++ ...  D:\keygate; go build -v -o bin/keygate.exe ./cmd/server 2>&1 | Tee-O ...
++                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (go: downloading.../x/text v0.42.0:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+go: downloading go.mongodb.org/mongo-driver/v2 v2.5.0
+go: downloading go.yaml.in/yaml/v2 v2.4.2
+go: downloading github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.23
+go: downloading github.com/gabriel-vasile/mimetype v1.4.12
+go: downloading github.com/go-playground/universal-translator v0.18.1
+go: downloading github.com/leodido/go-urn v1.4.0
+go: downloading github.com/vmihailenco/tagparser/v2 v2.0.0
+go: downloading github.com/go-playground/locales v0.14.1
+package github.com/tabloy/keygate/cmd/server
+	imports github.com/tabloy/keygate/internal/handler from main.go
+	imports github.com/tabloy/keygate/internal/service from admin.go
+	imports github.com/tabloy/keygate/internal/payment from payment.go
+	imports github.com/tabloy/keygate/internal/service from stripe.go: import cycle not allowed

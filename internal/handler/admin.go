@@ -47,6 +47,9 @@ type AdminHandler struct {
 	// handler keeps its distance from the Stripe SDK; nil on installs
 	// without Stripe, where there is nothing to confirm against.
 	SubscriptionEnded func(ctx context.Context, subscriptionID string) (bool, error)
+	// BaseURL is the configured public origin (BASE_URL), used to build
+	// the payment provider webhook URLs shown in the admin settings.
+	BaseURL string
 	// beforeCutoffWrite runs between reading a license (and the plan
 	// or product it points at) and the transaction that writes it.
 	// Tests use it to commit a change in that window; nil everywhere

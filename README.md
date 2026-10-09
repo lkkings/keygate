@@ -97,15 +97,21 @@ A Go server + PostgreSQL + (optional) S3-compatible storage for release artifact
 ```bash
 # 1. Download
 curl -O https://raw.githubusercontent.com/tabloy/keygate/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/tabloy/keygate/main/Caddyfile
 curl -O https://raw.githubusercontent.com/tabloy/keygate/main/.env.example
 cp .env.example .env
 
 # 2. Set your secrets
 # Edit .env: set JWT_SECRET and LICENSE_SIGNING_KEY (openssl rand -hex 32)
+# For automatic HTTPS, set DOMAIN=your.domain (DNS → this host, ports 80/443 open)
 
 # 3. Run
 docker compose up -d
 ```
+
+HTTPS is enabled automatically: the bundled Caddy proxy obtains and renews a
+Let's Encrypt certificate for `DOMAIN`. Without `DOMAIN` it serves
+**https://localhost** with a locally issued certificate (browser warning expected).
 
 ### From source
 

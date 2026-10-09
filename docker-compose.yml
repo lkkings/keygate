@@ -1,8 +1,9 @@
 services:
   keygate:
     build: .  # uncomment to build from source
-    ports:
-      - "9000:9000"
+    # Not published: all traffic goes through the caddy service (TLS).
+    expose:
+      - "9000"
     # Everything in .env reaches the container (storage, release keys,
     # rate limits, Redis...). The values under `environment` take
     # precedence over .env and pin what is specific to this compose setup.
@@ -13,7 +14,7 @@ services:
     environment:
       PORT: "9000"
       ENVIRONMENT: production
-      BASE_URL: ${BASE_URL:-http://localhost:9000}
+      BASE_URL: https://${DOMAIN:-localhost}
       # The bundled postgres service, not the localhost URL in .env.example.
       DATABASE_URL: postgres://keygate:keygate@postgres:5432/keygate?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
@@ -39,6 +40,30 @@ services:
       retries: 3
       start_period: 10s
 
+  # TLS termination. Set DOMAIN in .env to a public hostname for an
+  # automatic Let's Encrypt certificate; without it, https://localhost
+  # is served with Caddy's local CA.
+  caddy:
+    image: caddy:2.10-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+      # Same HTTPS listener on the old port, so https://127.0.0.1:9000 works.
+      - "9000:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and ACME account; keep them to avoid re-issuing on
+      # restart. Named volumes: Caddy's storage check fails on Docker
+      # Desktop (Windows/macOS) bind mounts.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - keygate
+    restart: unless-stopped
+
   postgres:
     image: postgres:18-alpine
     environment:
@@ -53,3 +78,7 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

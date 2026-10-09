@@ -47,8 +47,7 @@ func (h *AdminHandler) GetPaymentSettings(c *gin.Context) {
 		}
 	}
 
-	// Add webhook URLs (TODO: get actual base URL from config)
-	baseURL := "https://api.example.com" // Placeholder
+	baseURL := paymentWebhookBaseURL(h.BaseURL, adminBaseURL(c))
 	webhookURLs := make(map[string]string)
 	for _, provider := range providerNames {
 		webhookURLs[provider] = baseURL + "/api/v1/payment/" + provider + "/webhook"
@@ -131,6 +130,25 @@ func (h *AdminHandler) TestPaymentProviderConnection(c *gin.Context) {
 }
 
 // Helper functions
+
+// paymentWebhookBaseURL picks the public origin payment providers call
+// back: BASE_URL when configured, else the one the admin reached us
+// on. Always https — Alipay and WeChat Pay reject plain-HTTP notify
+// URLs, and Stripe requires TLS for live-mode endpoints.
+func paymentWebhookBaseURL(configured, inferred string) string {
+	base := strings.TrimSpace(configured)
+	if base == "" {
+		base = inferred
+	}
+	base = strings.TrimRight(base, "/")
+	if rest, ok := strings.CutPrefix(base, "http://"); ok {
+		return "https://" + rest
+	}
+	if !strings.HasPrefix(base, "https://") {
+		return "https://" + base
+	}
+	return base
+}
 
 // isSecretField checks if a field name indicates secret data
 func isSecretField(key string) bool {

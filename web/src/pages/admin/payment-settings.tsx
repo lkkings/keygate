@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { type TranslationKeys, useI18n } from "@/i18n"
+import { admin } from "@/lib/api"
 
 type Translate = (key: TranslationKeys, params?: Record<string, string | number>) => string
 
@@ -19,10 +20,7 @@ export function PaymentSettingsPage() {
   const queryClient = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ["payment-settings"],
-    queryFn: async () => {
-      const response = await fetch("/api/v1/admin/settings")
-      return response.json()
-    },
+    queryFn: admin.getPaymentSettings,
   })
 
   if (isLoading) {
@@ -90,15 +88,7 @@ export function PaymentSettingsPage() {
 function useSaveProvider(provider: string, providerName: string, onUpdate: () => void) {
   const { t } = useI18n()
   return useMutation({
-    mutationFn: async (data: Record<string, string>) => {
-      const response = await fetch(`/api/v1/admin/payment-providers/${provider}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      })
-      if (!response.ok) throw new Error(t("settings.saveError"))
-      return response.json()
-    },
+    mutationFn: (data: Record<string, string>) => admin.updatePaymentProvider(provider, data),
     onSuccess: () => {
       showToast(t("paymentSettings.saved", { provider: providerName }), "success")
       onUpdate()
@@ -131,13 +121,7 @@ function StripeConfigCard({
   const updateMutation = useSaveProvider("stripe", name, onUpdate)
 
   const testMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/v1/admin/payment-providers/stripe/test", {
-        method: "POST",
-      })
-      if (!response.ok) throw new Error(response.statusText || String(response.status))
-      return response.json()
-    },
+    mutationFn: () => admin.testPaymentProvider("stripe"),
     onSuccess: (data: { status?: string }) => {
       if (data.status === "not_implemented") {
         showToast(t("paymentSettings.testNotImplemented"), "success")
